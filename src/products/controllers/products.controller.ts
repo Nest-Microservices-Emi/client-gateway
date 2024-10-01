@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Inject, Param, Patch, Post, Query } from '@nestjs/common';
-import { PRODUCT_SERVICE } from '../config/services';
+import { Body, Controller, Delete, Get, Inject, Param, ParseIntPipe, Patch, Post, Query } from '@nestjs/common';
 import { ClientProxy, RpcException } from '@nestjs/microservices';
-import { ProductPaginationDto } from '../common/pagination.dto';
 import { catchError, firstValueFrom } from 'rxjs';
-import { CreateProductDto } from '../common/create-product.dto';
-import { UpdateProductDto } from '../common/update-product.dto';
+import { CreateProductDto } from '../dto/create-product.dto';
+import { PRODUCT_SERVICE } from '../../config/services';
+import { PaginationDto } from '../../common/pagination.dto';
+import { UpdateProductDto } from '../dto/update-product.dto';
+
 
 @Controller('products')
 export class ProductsController {
@@ -21,7 +22,7 @@ export class ProductsController {
   }
 
   @Get()
-  public async findAll(@Query() dto: ProductPaginationDto) {
+  public async findAll(@Query() dto: PaginationDto) {
     return this.productsClient.send({ cmd: 'findAll'}, dto)
       .pipe(
         catchError( error => { throw new RpcException(error) })
@@ -30,15 +31,10 @@ export class ProductsController {
 
   @Get(':id')
   public async findById(@Param('id') id: string) {
-    // try {
-      return this.productsClient.send({ cmd: 'findById' }, { id })
-        .pipe(
-          catchError( error => { throw new RpcException(error) })
-        );
-      // return await firstValueFrom(request);
-    // } catch (error) {
-    //   throw new RpcException(error);
-    // }
+    return this.productsClient.send({ cmd: 'findById' }, { id })
+      .pipe(
+        catchError( error => { throw new RpcException(error) })
+      );
   }
 
   @Delete(':id')
@@ -50,8 +46,11 @@ export class ProductsController {
   }
 
   @Patch(':id')
-  public async update(@Body() dto: UpdateProductDto) {
-    return this.productsClient.send({ cmd: 'update' }, dto)
+  public async update(
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateProductDto
+  ) {
+    return this.productsClient.send({ cmd: 'update' }, { id, ...dto })
       .pipe(
         catchError( error => { throw new RpcException(error)})
       );
