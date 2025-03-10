@@ -5,16 +5,17 @@ import { ClientProxy, RpcException } from '@nestjs/microservices';
 import { catchError } from 'rxjs';
 import { OrderPaginationDto } from './dto/order-pagination.dto';
 import { OrderStatus } from './enum/order.enum';
+import { NATS_SERVICE } from '../config/services';
 
 @Controller('orders')
 export class OrdersController {
   constructor(
-    @Inject(ORDER_SERVICE) private readonly ordersClient: ClientProxy
+    @Inject(NATS_SERVICE) private readonly client: ClientProxy
   ) {}
 
   @Post()
   create(@Body() dto: CreateOrderDto) {
-    return this.ordersClient.send({ cmd: 'create' }, dto)
+    return this.client.send({ cmd: 'createOrder' }, dto)
       .pipe(
         catchError( error => { throw new RpcException(error) })
       )
@@ -22,7 +23,7 @@ export class OrdersController {
 
   @Get()
   findAll(@Query() dto: OrderPaginationDto) {
-    return this.ordersClient.send({ cmd: 'findAll'}, dto)
+    return this.client.send({ cmd: 'findAllOrders'}, dto)
       .pipe(
         catchError( error => { throw new RpcException(error) })
       );
@@ -30,7 +31,7 @@ export class OrdersController {
 
   @Get(':id') 
   findById(@Param('id', ParseUUIDPipe) id: string) {
-    return this.ordersClient.send({ cmd: 'findById' }, { id })
+    return this.client.send({ cmd: 'findOrderById' }, { id })
       .pipe(
         catchError( error => { throw new RpcException(error) })
       );
@@ -41,7 +42,7 @@ export class OrdersController {
     @Param('id', ParseUUIDPipe) id: string,
     @Body('status', new ParseEnumPipe(OrderStatus)) status: OrderStatus
   ) {
-    return this.ordersClient.send({ cmd: 'updateStatus' }, { id, status })
+    return this.client.send({ cmd: 'updateOrderStatus' }, { id, status })
       .pipe(
         catchError( error => { throw new RpcException(error) })
       );
